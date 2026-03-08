@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 프롬프트 엔지니어링</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Chosen Palette: Slate (Neutrals) + Emerald (Primary/Action) + Indigo (Accent/Tech) -->
+    <!-- Application Structure Plan: The SPA is structured to facilitate sequential learning and deep exploration without overwhelming the user. 
+         1. Hero/Intro: Sets the context and overall goals.
+         2. Analytical Dashboard: Uses Chart.js to visualize the learning curve and tool distribution, providing a bird's-eye view of the curriculum's focus.
+         3. Interactive Workbook (Core): A tabbed interface for Weeks 1-4, coupled with an accordion layout for each Day. This structure is chosen because the detailed step-by-step guides, prompts, and expected results contain dense information. Accordions keep the interface clean while allowing users to drill down into specific daily tasks when needed. -->
+    <!-- Visualization & Content Choices: 
+         - Radar Chart (Chart.js): Goal: Show skill acquisition balance. Viz: Radar. Justification: Best for comparing multiple quantitative variables (skills) simultaneously. 
+         - Doughnut Chart (Chart.js): Goal: Show tool usage proportion. Viz: Doughnut. Justification: Clearly displays part-to-whole relationships for the three core tools.
+         - Interactive Accordion (HTML/JS): Goal: Organize dense daily curriculum data. Viz: Expandable lists. Justification: Prevents scrolling fatigue; allows focused reading of specific steps, prompts, and results.
+         - Emoticons/Unicode: Goal: Visual anchoring. Viz: Unicode characters. Justification: Strictly adheres to the NO SVG/Mermaid constraint while maintaining visual interest. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+            opacity: 0;
+        }
+        .accordion-content.expanded {
+            max-height: 2000px;
+            opacity: 1;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .prompt-box {
+            background-color: #1e293b;
+            color: #34d399;
+            font-family: monospace;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🚀</span>
+                    <span class="font-bold text-xl tracking-tight text-slate-900">AI Boost 16</span>
+                </div>
+                <div class="hidden md:flex space-x-6">
+                    <a href="#dashboard" class="text-slate-600 hover:text-emerald-600 font-medium transition-colors">대시보드</a>
+                    <a href="#workbook" class="text-slate-600 hover:text-emerald-600 font-medium transition-colors">실습 워크북</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">
+
+        <section class="text-center space-y-6 pt-8 pb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+                AI프롬프트 엔지니어링 <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">실습 워크북</span>
+            </h1>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                코딩 없이 AI를 업무에 즉시 적용하세요. ChatGPT, Gemini, GitHub을 활용하여 소통, 자동화, 데이터 분석, 그리고 프로젝트 관리까지 16일 만에 마스터하는 상세 실습 가이드입니다.
+            </p>
+        </section>
+
+        <section id="dashboard" class="space-y-6 scroll-mt-20 border-t border-slate-200 pt-12">
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900">과정 분석 대시보드</h2>
+                <p class="text-slate-600 mt-2 leading-relaxed">
+                    본 섹션은 16일간의 커리큘럼이 어떤 역량 향상에 집중하고 있으며, 어떤 도구들을 주로 활용하는지 시각화하여 보여줍니다. 학습을 시작하기 전, 전체적인 교육의 방향성과 목표를 이해하는 데 도움을 줍니다.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2 text-center">목표 역량 향상 지표</h3>
+                    <p class="text-xs text-slate-500 text-center mb-4">커리큘럼 전반에 걸쳐 요구되는 핵심 실무 스킬의 비중입니다.</p>
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2 text-center">핵심 도구 활용 비중</h3>
+                    <p class="text-xs text-slate-500 text-center mb-4">학습 기간 동안 각 AI 및 관리 도구가 차지하는 실습 비율입니다.</p>
+                    <div class="chart-container">
+                        <canvas id="doughnutChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="workbook" class="space-y-6 scroll-mt-20 border-t border-slate-200 pt-12">
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900">상세 실습 워크북</h2>
+                <p class="text-slate-600 mt-2 leading-relaxed">
+                    본 섹션은 커리큘럼의 핵심입니다. 주차별 탭을 클릭하여 일자별 학습 내용을 확인하세요. 각 일자 카드를 클릭하면 학습 목적, 상세한 단계별 행동 지침, 복사해서 바로 사용할 수 있는 추천 프롬프트, 그리고 예상 결과가 펼쳐집니다. 이 가이드를 따라 직접 실습해 보며 AI 활용 능력을 체화하세요.
+                </p>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="w-full md:w-1/4 flex flex-col gap-2" id="week-tabs">
+                </div>
+
+                <div class="w-full md:w-3/4 flex flex-col gap-4 min-h-[500px]" id="day-list">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 text-center mt-16">
+        <div class="max-w-6xl mx-auto px-4">
+            <p>&copy; 2026 AI Curriculum Builder. Designed for optimized practical learning.</p>
+        </div>
+    </footer>
+
+    <script>
+        const appData = [
+            {
+                week: 1,
+                title: '1주차: AI 소통 기초 및 도구 적응',
+                days: [
+                    {
+                        day: 1,
+                        topic: "AI 비서 성향 파악 및 비교 분석",
+                        purpose: "각 AI 모델(ChatGPT, Gemini)의 고유한 '성격'과 '강점'을 파악하여, 업무 상황에 따라 어떤 도구를 꺼내 쓸지 결정할 수 있는 안목을 기릅니다.",
+                        steps: [
+                            "동시 실행: 웹 브라우저에 ChatGPT와 Gemini 탭을 각각 띄워 준비합니다.",
+                            "동일 질문 투여: '2024년 하반기 국내 AI 트렌드에 대해 알려줘'와 같이 최신 정보가 필요한 질문을 양쪽에 동일하게 입력합니다.",
+                            "답변 품질 평가: 정보의 최신성(Gemini 우세 예상), 문장의 매끄러움(ChatGPT 우세 예상), 출처 제시 여부를 눈으로 확인하고 비교합니다.",
+                            "역할 인터뷰: 아래 제공된 프롬프트를 사용하여 AI에게 직접 자신의 강점이 무엇인지 묻습니다."
+                        ],
+                        prompt: "현재 너의 모델 버전은 무엇이니? 그리고 다른 경쟁 AI(예: Gemini/ChatGPT)와 비교했을 때 '비즈니스 문서 요약'과 '창의적 아이디어 제안' 중 어떤 것을 더 잘한다고 생각하는지 구체적인 이유와 함께 말해줘.",
+                        expected: "ChatGPT는 논리적 구조와 문서 작성 능력을, Gemini는 최신 뉴스 검색 및 구글 생태계 연동의 강점을 강조할 것입니다. 이를 통해 상황별 도구 선택 기준을 얻게 됩니다."
+                    },
+                    {
+                        day: 2,
+                        topic: "6요소 공식 기반 프롬프트 튜닝",
+                        purpose: "모호한 지시가 아닌, AI가 단번에 정답을 내놓을 수밖에 없는 '고밀도 지시문(프롬프트)' 작성 능력을 체득합니다.",
+                        steps: [
+                            "비포(Before) 테스트: 아무런 조건 없이 '회사 홍보 메일 써줘'라고 짧게 입력하여 기본적인 수준의 답변을 확인합니다.",
+                            "공식 적용: 제공된 6요소(역할, 대상, 목적, 톤, 형식, 제약조건) 양식에 맞춰 내용을 꼼꼼히 채워 입력합니다.",
+                            "애프터(After) 비교: 첫 번째 답변과 공식이 적용된 두 번째 답변의 구체성, 그리고 실제 업무에 즉시 사용 가능한지 여부를 비교합니다."
+                        ],
+                        prompt: "[역할: 10년차 베테랑 마케터]\n[대상: 30대 직장인 남성]\n[목적: 신규 헬스케어 구독 서비스 홍보]\n[톤: 친근하면서도 신뢰감 있는]\n[형식: 블로그 포스팅 형태]\n[제약: 전문 용어는 피하고 이모지를 적절히 섞어서 1000자 내외로 작성해줘]",
+                        expected: "수정이 거의 필요 없는 수준의 타겟팅된 프로페셔널한 비즈니스 문구가 생성됩니다. AI가 내 의도를 정확히 파악했음을 확인할 수 있습니다."
+                    },
+                    {
+                        day: 3,
+                        topic: "Gemini 멀티모달 분석 실습",
+                        purpose: "텍스트를 넘어 이미지, 복잡한 PDF 등 시각 자료에서 데이터를 빠르게 추출하고 요약하는 기술을 익힙니다.",
+                        steps: [
+                            "파일 준비: 복잡한 표가 포함된 이미지나 영문으로 된 PDF 보고서를 PC에 준비합니다.",
+                            "업로드 및 지시: Gemini 채팅창 하단의 '+' 버튼을 눌러 파일을 올리고, 아래의 분석 프롬프트를 입력합니다.",
+                            "데이터 교차 검증: AI가 이미지 속 표의 수치를 정확히 읽었는지 원본과 대조하며 환각(오류)이 없는지 체크합니다."
+                        ],
+                        prompt: "이 이미지에 있는 표 데이터를 읽고, 가장 높은 수치와 낮은 수치의 항목을 찾아서 그 이유를 본문의 텍스트와 연결해 분석해줘. 최종 보고서는 한국어 불렛포인트 형식으로 정리해줘.",
+                        expected: "이미지 속 텍스트를 정확히 인식(OCR)하여 논리적으로 요약해줍니다. 영문 문서일 경우 번역과 요약이 동시에 완벽하게 수행됩니다."
+                    },
+                    {
+                        day: 4,
+                        topic: "GitHub Markdown 기반 업무 일지 기록",
+                        purpose: "코딩 없이 GitHub을 사용하여 휘발되는 업무 지식을 반영구적 클라우드 공간에 체계적으로 기록하는 법을 배웁니다.",
+                        steps: [
+                            "저장소 생성: GitHub 사이트에 접속하여 'Daily-Learning-Log'라는 이름의 새로운 Repository(저장소)를 생성합니다.",
+                            "Markdown 요청: AI에게 오늘 배운 내용을 마크다운(Markdown) 표 형식으로 만들어 달라고 요청합니다.",
+                            "기록 및 커밋: 생성된 코드를 GitHub의 README.md 파일에 붙여넣고, 'Add Day 4 log'라는 메시지와 함께 변경 사항을 저장(Commit)합니다."
+                        ],
+                        prompt: "오늘 배운 'AI 도구 셋업' 내용을 주제로 [학습 내용 / 핵심 도구 / 나의 느낀점] 세 가지 컬럼을 가진 Markdown 표 코드를 생성해줘. 그대로 복사해서 GitHub에 붙여넣을 거야.",
+                        expected: "깔끔한 표 형태의 코드 블록이 생성됩니다. 이를 GitHub에 저장하면 웹상에서 아주 보기 좋은 전문적인 업무 일지 페이지가 구축됩니다."
+                    }
+                ]
+            },
+            {
+                week: 2,
+                title: '2주차: 비즈니스 문서 자동화',
+                days: [
+                    {
+                        day: 5,
+                        topic: "커뮤니케이션 시뮬레이션 및 메일 자동화",
+                        purpose: "감정적 소모가 큰 까다로운 대인 관계 업무(거절, 협상 등)를 AI의 논리를 빌려 현명하게 해결합니다.",
+                        steps: [
+                            "페르소나 설정: AI에게 '매우 깐깐하고 논리적인 팀장님'과 같은 구체적인 상대방 역할을 부여합니다.",
+                            "롤플레잉 진행: 내가 작성한 거절/요청 메일 초안을 보여주고, AI에게 예상되는 반박이나 거절 사유를 말해달라고 합니다.",
+                            "최종안 도출: AI의 예상 반박을 방어할 수 있도록 메일 초안을 수정하여 완벽한 버전을 완성합니다."
+                        ],
+                        prompt: "내가 프로젝트 일정을 1주일 연기해야 하는 상황이야. 상사가 매우 엄격한 편인데, 업무 진행 상황을 근거로 들어서 기분 나쁘지 않게 일정 연기를 요청하는 메일 초안을 세 가지 버전(정중한/논리적인/간결한)으로 써줘.",
+                        expected: "상황에 따른 맞춤형 톤앤매너 메일들이 제공되며, 내가 미처 생각지 못한 합리적인 '대안 제시' 문구까지 포함되어 설득력을 높여줍니다."
+                    },
+                    {
+                        day: 6,
+                        topic: "발표 자료(PPT) 기획 및 대본 설계",
+                        purpose: "빈 화면에서 시작하는 막막함을 없애고, 논리적인 기승전결이 있는 발표 구조를 단 몇 분 만에 설계합니다.",
+                        steps: [
+                            "핵심 메시지 정의: 발표의 주제와 청중 수준, 궁극적인 목표를 AI에게 명확히 설명합니다.",
+                            "목차 생성 및 검토: 아래 프롬프트를 입력하여 AI가 제안하는 5~10장의 슬라이드 구성안을 받아 검토합니다.",
+                            "대본 구체화: 구성안이 확정되면, 각 슬라이드별로 '반드시 해야 할 말'과 '시각 자료 컨셉'을 구체적으로 요청합니다."
+                        ],
+                        prompt: "'AI를 활용한 업무 효율화'라는 주제로 10분 발표를 할 거야. 청중은 IT에 익숙하지 않은 경영진이야. 5개의 슬라이드 구성을 짜주고, 각 슬라이드별 핵심 이미지 컨셉과 발표용 스크립트를 작성해줘.",
+                        expected: "비전문가도 이해하기 쉬운 비유가 섞인 훌륭한 발표 시나리오와, 장표마다 어떤 이미지를 넣으면 좋을지 기획안이 완성됩니다."
+                    },
+                    {
+                        day: 7,
+                        topic: "AI를 이용한 비주얼 에셋 제작",
+                        purpose: "저작권 문제없는 고퀄리티 맞춤형 이미지를 직접 제작하여 보고서나 블로그의 시각적 가치를 크게 높입니다.",
+                        steps: [
+                            "컨셉 설명: 원하는 이미지의 분위기, 색상, 개체, 화풍을 최대한 구체적인 텍스트로 묘사하여 프롬프트를 입력합니다.",
+                            "반복 수정: 첫 결과물에서 마음에 안 드는 부분을 대화하듯 피드백하여 수정합니다.",
+                            "최종본 활용: 완성된 이미지를 다운로드하여 PPT나 문서에 즉시 삽입합니다."
+                        ],
+                        prompt: "미니멀하고 세련된 느낌의 '스마트 워킹 공간' 일러스트를 그려줘. 파스텔 톤의 파란색이 주 색상이었으면 좋겠고, 책상 위에는 노트북과 커피 한 잔이 놓여 있어. 전체적으로 차분한 분위기여야 해.",
+                        expected: "요청한 색감과 오브젝트(노트북, 커피)가 정확히 반영된 고화질 이미지가 생성됩니다. 디자이너 없이도 수준 높은 비주얼을 얻습니다."
+                    },
+                    {
+                        day: 8,
+                        topic: "실시간 시장 조사 리포트",
+                        purpose: "AI의 과거 데이터 한계를 극복하고, 실제 웹 데이터를 바탕으로 한 신뢰도 높은 리서치 결과를 확보합니다.",
+                        steps: [
+                            "주제 선정: 현재 가장 뜨겁게 변하고 있어 최신 뉴스가 반드시 필요한 산업 트렌드를 정합니다.",
+                            "웹 검색 지시: Gemini에게 명시적으로 최신 정보를 검색하여 요약할 것을 아래와 같이 지시합니다.",
+                            "표 변환 및 기록: 조사된 내용을 항목별 장단점 표로 변환해달라고 한 뒤, 이를 GitHub에 기록합니다."
+                        ],
+                        prompt: "현재 '생성형 AI 하드웨어 시장'의 최신 동향을 검색해서 알려줘. 특히 2024년 하반기 이후의 뉴스들만 모아서 제품별 장단점을 비교하는 표로 만들어줘.",
+                        expected: "과거 학습 데이터가 아닌, 실시간 웹 검색을 통한 가장 따끈따끈한 시장 정보와 경쟁사 분석 표가 완성됩니다."
+                    }
+                ]
+            },
+            {
+                week: 3,
+                title: '3주차: 데이터 분석 및 프로젝트 관리',
+                days: [
+                    {
+                        day: 9,
+                        topic: "엑셀 데이터 전처리 비서",
+                        purpose: "수작업으로 하던 단순 반복적인 데이터 정제 작업을 AI에게 맡겨 실수를 줄이고 작업 시간을 혁신적으로 단축합니다.",
+                        steps: [
+                            "데이터 구조 파악: 내가 가진 엑셀 파일의 헤더(열 이름)가 무엇인지 파악하고 이를 AI에게 텍스트로 설명합니다.",
+                            "수식/방법론 요청: 원하는 최종 결과물 형태를 말하고, 이를 엑셀에서 구현할 가장 쉬운 수식이나 기능을 알려달라고 합니다.",
+                            "실제 적용 및 검증: AI가 준 수식을 내 엑셀에 붙여넣어 결과가 맞게 나오는지 확인합니다."
+                        ],
+                        prompt: "A열에는 날짜, B열에는 지출 항목, C열에는 금액이 있는 엑셀 데이터가 있어. 여기서 '식비' 항목만 골라서 월별 합계를 구하고 싶은데, 엑셀에서 사용할 수 있는 가장 효율적인 수식(Pivot 혹은 SUMIFS)을 설명과 함께 알려줘.",
+                        expected: "복잡한 함수를 직접 고민하거나 검색할 필요 없이, 복사해서 바로 쓸 수 있는 정확한 수식과 그 작동 원리를 친절하게 설명받습니다."
+                    },
+                    {
+                        day: 10,
+                        topic: "데이터 시각화 인사이트 도출",
+                        purpose: "단순한 숫자 나열을 넘어서, 경영진이나 팀원들의 의사 결정에 즉각적인 도움을 주는 '의미 있는 해석'을 추출합니다.",
+                        steps: [
+                            "현상/데이터 입력: 요약된 핵심 데이터 수치나 통계표를 AI에게 복사하여 붙여넣습니다.",
+                            "해석 및 대안 요청: 이 수치가 의미하는 바가 무엇인지 묻고, 문제를 해결하거나 성과를 높일 대안을 요구합니다.",
+                            "차트 추천: 이 데이터를 보고서에 넣을 때 어떤 형태의 차트가 가장 효과적일지 추천받습니다."
+                        ],
+                        prompt: "지난 3개월간 우리 쇼핑몰의 유입 경로별 전환율 데이터야. [검색: 2%, SNS: 5%, 직접유입: 1%]. 이 데이터를 보고 우리가 마케팅 예산을 어디에 집중해야 할지 경영적 관점에서 제안해주고, 이를 가장 잘 보여줄 수 있는 차트 종류를 추천해줘.",
+                        expected: "단순한 수치 현황 보고가 아니라, 전략적 인사이트와 적합한 시각화 방법론을 얻습니다."
+                    },
+                    {
+                        day: 11,
+                        topic: "아이디어 브레인스토밍 및 리스크 진단",
+                        purpose: "개인의 편향된 사고에서 벗어나 AI를 통해 다각도의 창의적 아이디어를 얻고, 동시에 발생 가능한 위험을 사전에 차단합니다.",
+                        steps: [
+                            "아이디어 무제한 발산: AI에게 제약 없이 최대한 많고 독특한 아이디어를 뽑아달라고 요청합니다.",
+                            "필터링 및 구체화: 제안된 목록 중 가장 현실성 있는 1~2개를 골라 구체적인 실행 방안을 묻습니다.",
+                            "레드팀 활동: AI에게 스스로 낸 아이디어가 실패할 이유만 아주 비판적으로 찾아내라고 지시합니다."
+                        ],
+                        prompt: "신규 카페를 창업하려고 해. '커피와 명상'을 결합한 컨셉인데, 사람들이 좋아할 만한 독특한 서비스 아이디어 5가지를 제안해줘. 그 후에 각 아이디어의 예상되는 문제점(리스크)도 가감 없이 비판해줘.",
+                        expected: "새롭고 긍정적인 서비스 아이디어 도출은 물론, 현실적인 운영상의 문제점까지 균형 있게 파악하게 됩니다."
+                    },
+                    {
+                        day: 12,
+                        topic: "GitHub Projects 기반 칸반 보드 운영",
+                        purpose: "이메일과 메신저에 파편화된 할 일들을 시각적 대시보드로 통합하여, 프로젝트의 진행 흐름과 병목 현상을 한눈에 관리합니다.",
+                        steps: [
+                            "프로젝트 보드 생성: GitHub 저장소 상단의 'Projects' 메뉴로 이동하여 새로운 보드를 생성합니다.",
+                            "작업 상태 컬럼 설정: To-do / In Progress / Done 등 업무 흐름에 맞는 컬럼을 구성합니다.",
+                            "이슈 등록: AI를 통해 도출한 프로젝트 세부 단계들을 하나씩 이슈 카드로 등록하고 관리합니다."
+                        ],
+                        prompt: "내가 4주차에 진행할 '나만의 업무 매뉴얼 만들기' 프로젝트를 위해 총 8개의 세부 할 일 목록을 작업 순서에 따라 작성해줘. 이 내용을 복사해서 GitHub 이슈 칸반 보드에 각각 등록할 거야.",
+                        expected: "체계적으로 분류된 8개의 작업 단위 목록이 생성되며, 이를 통해 체계적인 일정 관리 시스템의 뼈대를 갖추게 됩니다."
+                    }
+                ]
+            },
+            {
+                week: 4,
+                title: '4주차: 실전 프로젝트 및 최종 피드백',
+                days: [
+                    {
+                        day: 13,
+                        topic: "프로젝트 기획안 최종 셀프 검토",
+                        purpose: "프로젝트 본격 착수 전, 기획의 논리적 허점을 AI 전문가 페르소나에게 철저히 검증받아 성공 확률을 높입니다.",
+                        steps: [
+                            "기획안 업로드: 그동안 구상한 프로젝트의 배경, 목적, 예상 결과물을 텍스트로 정리하여 AI에게 입력합니다.",
+                            "비판적 피드백 요청: AI에게 업계 최고 전문가 역할을 주고 가장 큰 약점을 찾아달라고 합니다.",
+                            "기획 보완 및 기록: 조언을 바탕으로 기획안을 수정하고 GitHub에 최종 기획안 버전을 저장합니다."
+                        ],
+                        prompt: "내 최종 프로젝트 기획안이야. [기획 내용 입력]. 이 기획안에서 논리적으로 부족한 부분이나, 실행 시 예상되는 가장 큰 장애물 3가지는 무엇일까? 어떻게 보완하면 좋을지 날카롭게 지적해줘.",
+                        expected: "단순한 칭찬이 아닌 기획의 빈틈을 메워주는 전문가 수준의 조언을 통해 문서의 완성도가 비약적으로 상승합니다."
+                    },
+                    {
+                        day: 14,
+                        topic: "AI 협업 콘텐츠 집중 제작",
+                        purpose: "AI를 단순 도구가 아닌 '협업 파트너'로 활용하여 글쓰기, 시각화 등 결과물의 퀄리티와 작업 속도를 동시에 끌어올립니다.",
+                        steps: [
+                            "인간의 초안 작성: 어설프더라도 내가 전달하고자 하는 핵심 뼈대와 문장들을 먼저 작성해 봅니다.",
+                            "AI 윤문 및 톤 조정: 작성한 글을 AI에게 주고 타겟 독자에 맞는 문체로 세밀하게 다듬어 달라고 요청합니다.",
+                            "버전 관리: 중간 완성된 결과물들을 꾸준히 GitHub에 Commit하여 작업 이력을 안전하게 보관합니다."
+                        ],
+                        prompt: "이 글은 내가 작성한 업무 가이드의 서론 초안이야. 핵심 내용은 유지하되, 조금 더 가독성이 좋고 독자가 읽고 싶게끔 3가지 스타일(전문적인/트렌디한/친절한)로 다듬어줘.",
+                        expected: "내가 직접 쓴 거친 문장들이 훨씬 더 프로페셔널하고 매끄러운 비즈니스 문장으로 완전히 재탄생합니다."
+                    },
+                    {
+                        day: 15,
+                        topic: "AI 피어 리뷰 (최종 검수)",
+                        purpose: "완성된 최종 결과물을 인간이 놓치기 쉬운 세밀한 부분까지 AI의 눈으로 검토받아 무결점 상태로 만듭니다.",
+                        steps: [
+                            "전체 결과물 입력: 완성된 문서 전체를 복사하거나 파일을 업로드하여 AI에게 제공합니다.",
+                            "깐깐한 검수 요청: 오타, 숫자 오류, 논리적 비약 등 아주 사소한 실수라도 잡아내도록 강력히 지시합니다.",
+                            "최종 수정 반영: 지적된 사항을 원본에 반영하여 최종 파일을 마감합니다."
+                        ],
+                        prompt: "너는 이제부터 우리 회사의 아주 꼼꼼한 편집장이자 팀장님이야. 내가 만든 이 최종 리포트를 검토하고, 수치상의 오류가 의심되거나 앞뒤 문맥이 맞지 않는 부분을 콕 집어서 피드백해줘. 칭찬은 필요 없고 철저히 개선점 위주로 말해줘.",
+                        expected: "내가 반복해서 읽느라 미처 보지 못했던 디테일한 실수나 논리의 맹점을 발견하여 완벽에 가까운 결과물을 확보합니다."
+                    },
+                    {
+                        day: 16,
+                        topic: "최종 배포 및 AI 데일리 루틴 확정",
+                        purpose: "16일간의 학습을 일회성 경험으로 끝내지 않고, 실제 매일의 업무 현장에 AI를 자연스럽게 통합하는 시스템을 구축합니다.",
+                        steps: [
+                            "결과물 공유: GitHub Repository의 README 파일을 깔끔하게 다듬고 공개하여 포트폴리오로 활용합니다.",
+                            "학습 회고: 1일차부터 쌓인 Commit 로그를 보며 기술의 성장을 스스로 확인합니다.",
+                            "개인화 루틴 설계: 나의 직무와 일과에 맞춰 매일 AI를 어떻게 활용할지 루틴을 세웁니다."
+                        ],
+                        prompt: "16일 동안 AI와 함께 성장하며 능력을 키웠어. 내 직무는 [본인 직무 입력]인데, 이제 현업에 복귀해서 매일 아침 출근 직후 15분 동안 AI를 가장 효율적으로 활용할 수 있는 '데일리 AI 워크플로우'를 추천해줘.",
+                        expected: "이메일 요약, 당일 할 일 우선순위 정리 등 당장 내일부터 써먹을 수 있는 강력하고 효율적인 업무 시작 루틴을 제안받습니다."
+                    }
+                ]
+            }
+        ];
+
+        let currentWeek = 1;
+
+        function init() {
+            renderTabs();
+            renderDays(currentWeek);
+            initCharts();
+        }
+
+        function renderTabs() {
+            const tabsContainer = document.getElementById('week-tabs');
+            tabsContainer.innerHTML = '';
+            appData.forEach(data => {
+                const btn = document.createElement('button');
+                const isActive = currentWeek === data.week;
+                btn.className = `w-full text-left px-4 py-3 rounded-lg border font-medium transition-colors ${isActive ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`;
+                btn.innerText = data.title;
+                btn.onclick = () => {
+                    currentWeek = data.week;
+                    renderTabs();
+                    renderDays(currentWeek);
+                };
+                tabsContainer.appendChild(btn);
+            });
+        }
+
+        function renderDays(weekNum) {
+            const listContainer = document.getElementById('day-list');
+            listContainer.innerHTML = '';
+            const weekData = appData.find(w => w.week === weekNum);
+
+            weekData.days.forEach(day => {
+                const card = document.createElement('div');
+                card.className = 'bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm';
+                
+                const headerId = `header-${day.day}`;
+                const contentId = `content-${day.day}`;
+
+                card.innerHTML = `
+                    <div id="${headerId}" class="px-6 py-4 cursor-pointer hover:bg-slate-50 transition-colors flex justify-between items-center" onclick="toggleAccordion('${contentId}')">
+                        <div class="flex items-center gap-4">
+                            <span class="bg-slate-800 text-white text-xs font-bold px-2 py-1 rounded">Day ${day.day}</span>
+                            <h4 class="text-lg font-bold text-slate-800">${day.topic}</h4>
+                        </div>
+                        <span class="text-slate-400 font-bold" id="icon-${contentId}">+</span>
+                    </div>
+                    <div id="${contentId}" class="accordion-content bg-slate-50 border-t border-slate-100 px-6">
+                        <div class="py-6 space-y-6">
+                            <div>
+                                <h5 class="text-sm font-bold text-emerald-600 mb-2 uppercase tracking-wide">학습 목적</h5>
+                                <p class="text-slate-700 text-sm leading-relaxed">${day.purpose}</p>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">상세 진행 단계</h5>
+                                <ul class="list-decimal pl-5 space-y-2 text-sm text-slate-600">
+                                    ${day.steps.map(step => `<li>${step}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-bold text-indigo-600 mb-2 uppercase tracking-wide">추천 프롬프트</h5>
+                                <div class="prompt-box text-sm">${day.prompt}</div>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">예상 결과</h5>
+                                <p class="text-slate-600 text-sm italic border-l-4 border-emerald-400 pl-3 py-1 bg-white">${day.expected}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        function toggleAccordion(contentId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById(`icon-${contentId}`);
+            const isExpanded = content.classList.contains('expanded');
+            
+            if (isExpanded) {
+                content.classList.remove('expanded');
+                icon.innerText = '+';
+            } else {
+                content.classList.add('expanded');
+                icon.innerText = '-';
+            }
+        }
+
+        function initCharts() {
+            const radarCtx = document.getElementById('radarChart').getContext('2d');
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['프롬프트 엔지니어링', '멀티모달 분석', '데이터 시각화', '글쓰기 자동화', '프로젝트 관리', '리서치 역량'],
+                    datasets: [{
+                        label: '목표 달성도 (%)',
+                        data: [95, 85, 80, 90, 85, 90],
+                        backgroundColor: 'rgba(5, 150, 105, 0.2)',
+                        borderColor: '#059669',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#059669'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+            new Chart(doughnutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ChatGPT (텍스트/논리)', 'Gemini (멀티모달/검색)', 'GitHub (기록/관리)'],
+                    datasets: [{
+                        data: [45, 35, 20],
+                        backgroundColor: ['#10b981', '#3b82f6', '#1e293b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
